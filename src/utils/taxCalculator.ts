@@ -17,6 +17,7 @@ export type TaxBreakdownT = {
   totalTaxes: number;
   netIncome: number;
   incomeBiggerThanNormLimit: boolean;
+  netRateRatio: number;
 };
 
 const getPFARealCASAmount = (income: number, minimumWage: number): number => {
@@ -25,10 +26,10 @@ const getPFARealCASAmount = (income: number, minimumWage: number): number => {
     case income < minimumWage * 12:
       return 0;
 
-    case income > minimumWage * 12 && income < minimumWage * 24:
+    case income >= minimumWage * 12 && income < minimumWage * 24:
       return 39600;
 
-    case income > minimumWage * 24:
+    case income >= minimumWage * 24:
       return 79200;
   }
 };
@@ -39,10 +40,10 @@ const getPFARealCASSAmount = (income: number, minimumWage: number): number => {
     case income < minimumWage * 6:
       return 0;
 
-    case income > minimumWage * 6 && income < minimumWage * 60:
+    case income >= minimumWage * 6 && income < minimumWage * 60:
       return income;
 
-    case income > minimumWage * 60:
+    case income >= minimumWage * 60:
       return 198000;
   }
 };
@@ -53,13 +54,13 @@ const getPFANormaCASAmount = (income: number, minimumWage: number): number => {
     case income < minimumWage * 6:
       return 0;
 
-    case income > minimumWage * 6 && income < minimumWage * 12:
+    case income >= minimumWage * 6 && income < minimumWage * 12:
       return 19800;
 
-    case income > minimumWage * 12 && income < minimumWage * 24:
+    case income >= minimumWage * 12 && income < minimumWage * 24:
       return 39600;
 
-    case income > minimumWage * 24:
+    case income >= minimumWage * 24:
       return 79200;
   }
 };
@@ -70,10 +71,10 @@ const getPFANormaCASSAmount = (income: number, minimumWage: number) => {
     case income < minimumWage * 6:
       return 0;
 
-    case income > minimumWage * 6 && income < minimumWage * 60:
+    case income >= minimumWage * 6 && income < minimumWage * 60:
       return income;
 
-    case income > minimumWage * 60:
+    case income >= minimumWage * 60:
       return 198000;
   }
 };
@@ -84,13 +85,13 @@ const getSRLAdminCASSAmount = (income: number, minimumWage: number) => {
     case income < minimumWage * 6:
       return 0;
 
-    case income > minimumWage * 6 && income < minimumWage * 12:
+    case income >= minimumWage * 6 && income < minimumWage * 12:
       return 19800;
 
-    case income > minimumWage * 12 && income < minimumWage * 24:
+    case income >= minimumWage * 12 && income < minimumWage * 24:
       return 39600;
 
-    case income > minimumWage * 24:
+    case income >= minimumWage * 24:
       return 79200;
   }
 };
@@ -123,6 +124,16 @@ const getSRLMicroTaxRate = (income: number, caenCode: string) => {
   return 0.01;
 };
 
+const getNetRateRatio = (
+  netIncome: number,
+  grossMonthlyIncome: number,
+  workDays: number,
+  holidays: number
+) => {
+  const netRate = netIncome / (workDays - holidays) / 8 / 5;
+  return (netRate / grossMonthlyIncome) * 10000;
+};
+
 export const calculateTaxes = ({
   grossMonthlyIncome,
   contractType,
@@ -142,6 +153,9 @@ export const calculateTaxes = ({
 
   // Common constants
   const monthsInYear = 12;
+  const workDays = 262;
+  const holidaysCIM = 31;
+  const holidaysCompany = 0;
 
   // Common amounts
   const grossAnnualIncome = grossMonthlyIncome * monthsInYear;
@@ -157,6 +171,7 @@ export const calculateTaxes = ({
     dividendTax = 0,
     totalTaxes = 0,
     netIncome = 0,
+    netRateRatio = 0,
     incomeBiggerThanNormLimit = false;
 
   switch (contractType) {
@@ -186,6 +201,7 @@ export const calculateTaxes = ({
       incomeTax = (netIncomeReal - CAS - CASS) * incomeTaxContribution;
       totalTaxes = CAS + CASS + incomeTax + accountant;
       netIncome = netIncomeReal - totalTaxes;
+      netIncome = grossAnnualIncome - totalTaxes;
       break;
 
     case "PFANorma":
@@ -196,7 +212,9 @@ export const calculateTaxes = ({
       CASS = getPFANormaCASSAmount(incomeNorm, minWage) * cassContribution;
       incomeTax = incomeNorm * incomeTaxContribution;
       totalTaxes = CAS + CASS + incomeTax;
-      netIncome = grossAnnualIncome - totalTaxes;
+      netIncome = incomeBiggerThanNormLimit
+        ? NaN
+        : grossAnnualIncome - totalTaxes;
       break;
 
     case "SRLMicro":
@@ -244,6 +262,12 @@ export const calculateTaxes = ({
     dividendTax: Math.round(dividendTax),
     totalTaxes: Math.round(totalTaxes),
     netIncome: Math.round(netIncome),
+    netRateRatio: getNetRateRatio(
+      netIncome,
+      grossMonthlyIncome,
+      workDays,
+      contractType === "CIM" ? holidaysCIM : holidaysCompany
+    ),
     incomeBiggerThanNormLimit,
   };
 };

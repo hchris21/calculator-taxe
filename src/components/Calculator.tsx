@@ -5,8 +5,6 @@ import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
-  CardTitle,
   Label,
   Input,
 } from "@/components/ui";
@@ -61,7 +59,7 @@ export const Calculator = () => {
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5 gap-2">
                 <Label htmlFor="tax" className="mb-2">
-                  Suma incasat lunar (RON)
+                  Suma incasata lunar (RON)
                 </Label>
                 <Input
                   id="tax"
