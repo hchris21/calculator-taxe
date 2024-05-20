@@ -71,7 +71,7 @@ export const Calculator = () => {
                   data-testid="card-income-input"
                 />
                 <Label htmlFor="accountant" className="mb-2">
-                  Contabilitate (RON)
+                  Contabilitate / an (RON)
                 </Label>
                 <Input
                   id="accountant"
@@ -81,7 +81,7 @@ export const Calculator = () => {
                   data-testid="card-accountant-input"
                 />
                 <Label htmlFor="expenses" className="mb-2">
-                  Cheltuieli deductibile (RON)
+                  Cheltuieli deductibile / an (RON)
                 </Label>
                 <Input
                   id="expenses"
